@@ -48,6 +48,11 @@ func (b *GatewayBackend) DownlinkTXAckChan() chan gw.DownlinkTXAck {
 	return b.downlinkTXAckChan
 }
 
+// Open method.
+func (b *GatewayBackend) Open() error {
+	return nil
+}
+
 // Close method.
 func (b *GatewayBackend) Close() error {
 	if b.rxPacketChan != nil {

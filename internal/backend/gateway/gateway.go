@@ -28,6 +28,7 @@ type Gateway interface {
 	RXPacketChan() chan gw.UplinkFrame                     // channel containing the received packets
 	StatsPacketChan() chan gw.GatewayStats                 // channel containing the received gateway stats
 	DownlinkTXAckChan() chan gw.DownlinkTXAck              // channel containing the downlink tx acknowledgements
+	Open() error                                           // open the gateway backend.
 	Close() error                                          // close the gateway backend.
 }
 

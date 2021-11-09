@@ -138,6 +138,11 @@ type Config struct {
 					CommandTopicTemplate string `mapstructure:"command_topic_template"`
 				} `mapstructure:"mqtt"`
 
+				ZMQ struct {
+					EventURL   string `mapstructure:"event_url"`
+					CommandURL string `mapstructure:"command_url"`
+				} `mapstructure:"zmq"`
+
 				AMQP struct {
 					URL                       string `mapstructure:"url"`
 					EventQueueName            string `mapstructure:"event_queue_name"`

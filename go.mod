@@ -11,6 +11,7 @@ require (
 	github.com/brocaar/lorawan v0.0.0-20211025085338-61c36dbfb10a
 	github.com/eclipse/paho.mqtt.golang v1.2.0
 	github.com/go-redis/redis/v8 v8.8.3
+	github.com/go-zeromq/zmq4 v0.13.0
 	github.com/gofrs/uuid v3.2.0+incompatible
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-migrate/migrate/v4 v4.14.1
@@ -34,8 +35,8 @@ require (
 	github.com/streadway/amqp v0.0.0-20190827072141-edfb9018d271
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/lint v0.0.0-20200302205851-738671d3881b
-	golang.org/x/net v0.0.0-20201202161906-c7110b5ffcbb
-	golang.org/x/tools v0.0.0-20210106214847-113979e3529a
+	golang.org/x/net v0.0.0-20210405180319-a5a99cb37ef4
+	golang.org/x/tools v0.1.1
 	gonum.org/v1/gonum v0.0.0-20190115205657-1b07048b32c6
 	gonum.org/v1/netlib v0.0.0-20190219113230-9992c5f5eae4 // indirect
 	google.golang.org/api v0.30.0

@@ -194,6 +194,11 @@ func (b *Backend) DownlinkTXAckChan() chan gw.DownlinkTXAck {
 	return b.downlinkTxAckChan
 }
 
+// Open opens the backend
+func (b *Backend) Open() error {
+	return nil
+}
+
 func (b *Backend) Close() error {
 	log.Info("gateway/azure_iot_hub: closing backend")
 	b.cancel()

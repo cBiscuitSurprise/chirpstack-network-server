@@ -172,6 +172,11 @@ func (b *Backend) DownlinkTXAckChan() chan gw.DownlinkTXAck {
 	return b.downlinkTXAckChan
 }
 
+// Open opens the backend
+func (b *Backend) Open() error {
+	return nil
+}
+
 // Close closes the backend.
 func (b *Backend) Close() error {
 	log.Info("gateway/gcp_pub_sub: closing backend")

@@ -53,6 +53,9 @@ func GetConfig() config.Config {
 	c.NetworkServer.Gateway.Backend.MQTT.EventTopic = "gateway/+/event/+"
 	c.NetworkServer.Gateway.Backend.MQTT.CommandTopicTemplate = "gateway/{{ .GatewayID }}/command/{{ .CommandType }}"
 
+	c.NetworkServer.Gateway.Backend.ZMQ.EventURL = "ipc:///tmp/eventsTest"
+	c.NetworkServer.Gateway.Backend.ZMQ.CommandURL = "ipc:///tmp/commandTest"
+
 	c.NetworkServer.Gateway.Backend.AMQP.EventQueueName = "gateway-events"
 	c.NetworkServer.Gateway.Backend.AMQP.EventRoutingKey = "gateway.*.event.*"
 	c.NetworkServer.Gateway.Backend.AMQP.CommandRoutingKeyTemplate = "gateway.{{ .GatewayID }}.command.{{ .CommandType }}"

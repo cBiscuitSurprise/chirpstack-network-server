@@ -109,6 +109,11 @@ func NewBackend(c config.Config) (gateway.Gateway, error) {
 	return &b, nil
 }
 
+// Open opens the backend
+func (b *Backend) Open() error {
+	return nil
+}
+
 // Close closes the backend.
 // Note that this closes the backend one-way (gateway to backend).
 // This makes it possible to perform a graceful shutdown (e.g. when there are
