@@ -29,6 +29,7 @@ import (
 	"github.com/brocaar/chirpstack-network-server/v3/internal/backend/gateway/azureiothub"
 	"github.com/brocaar/chirpstack-network-server/v3/internal/backend/gateway/gcppubsub"
 	"github.com/brocaar/chirpstack-network-server/v3/internal/backend/gateway/mqtt"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/backend/gateway/zmq"
 	"github.com/brocaar/chirpstack-network-server/v3/internal/backend/joinserver"
 	"github.com/brocaar/chirpstack-network-server/v3/internal/band"
 	"github.com/brocaar/chirpstack-network-server/v3/internal/config"
@@ -222,6 +223,8 @@ func setGatewayBackend() error {
 		gw, err = gcppubsub.NewBackend(config.C)
 	case "azure_iot_hub":
 		gw, err = azureiothub.NewBackend(config.C)
+	case "zmq":
+		gw, err = zmq.NewBackend(config.C)
 	default:
 		return fmt.Errorf("unexpected gateway backend type: %s", config.C.NetworkServer.Gateway.Backend.Type)
 	}

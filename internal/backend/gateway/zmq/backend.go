@@ -57,7 +57,7 @@ func NewBackend(conf config.Config) (*Backend, error) {
 	log.WithFields(log.Fields{
 		"event_url":   zmqConf.EventURL,
 		"command_url": zmqConf.CommandURL,
-	}).Info("integration/zmq: setting up integration")
+	}).Info("gateway/zmq: setting up integration")
 
 	b := Backend{
 		rxPacketChan:      make(chan gw.UplinkFrame),
@@ -69,7 +69,7 @@ func NewBackend(conf config.Config) (*Backend, error) {
 		downMode:          conf.NetworkServer.Gateway.Backend.MultiDownlinkFeature,
 	}
 
-	// go b.Open()
+	go b.Open()
 
 	return &b, nil
 }
@@ -109,17 +109,17 @@ func (b *Backend) dialEventSock() error {
 	b.eventSock = zmq4.NewSub(ctx)
 	err := b.eventSock.Dial(b.eventURL)
 	if err != nil {
-		return errors.Wrap(err, "dial event api url error")
+		return errors.Wrap(err, "gateway/zmq: dial event api url error")
 	}
 
 	err = b.eventSock.SetOption(zmq4.OptionSubscribe, "")
 	if err != nil {
-		return errors.Wrap(err, "set event option error")
+		return errors.Wrap(err, "gateway/zmq: set event option error")
 	}
 
 	log.WithFields(log.Fields{
 		"event_url": b.eventURL,
-	}).Info("integration/zmq: connected to event socket")
+	}).Info("gateway/zmq: connected to event socket")
 
 	return nil
 }
@@ -131,12 +131,12 @@ func (b *Backend) dialCommandSock() error {
 	b.commandSock = zmq4.NewReq(ctx)
 	err := b.commandSock.Dial(b.commandURL)
 	if err != nil {
-		return errors.Wrap(err, "dial command api url error")
+		return errors.Wrap(err, "gateway/zmq: dial command api url error")
 	}
 
 	log.WithFields(log.Fields{
 		"command_url": b.commandURL,
-	}).Info("integration/zmq: connected to command socket")
+	}).Info("gateway/zmq: connected to command socket")
 
 	return nil
 }
@@ -144,7 +144,7 @@ func (b *Backend) dialCommandSock() error {
 func (b *Backend) dialCommandSockLoop() {
 	for {
 		if err := b.dialCommandSock(); err != nil {
-			log.WithError(err).Error("integration/zmq: command socket dial error")
+			log.WithError(err).Error("gateway/zmq: command socket dial error")
 			time.Sleep(time.Second)
 			continue
 		}
@@ -155,7 +155,7 @@ func (b *Backend) dialCommandSockLoop() {
 func (b *Backend) dialEventSockLoop() {
 	for {
 		if err := b.dialEventSock(); err != nil {
-			log.WithError(err).Error("integration/zmq: event socket dial error")
+			log.WithError(err).Error("gateway/zmq: event socket dial error")
 			time.Sleep(time.Second)
 			continue
 		}
@@ -184,7 +184,7 @@ func (b *Backend) SendTXPacket(txPacket gw.DownlinkFrame) error {
 	downID := helpers.GetDownlinkID(&txPacket)
 
 	if err := gateway.UpdateDownlinkFrame(b.downMode, &txPacket); err != nil {
-		return errors.Wrap(err, "set downlink compatibility mode error")
+		return errors.Wrap(err, "gateway/zmq: set downlink compatibility mode error")
 	}
 
 	return b.publishCommand(log.Fields{
@@ -216,9 +216,7 @@ func (b *Backend) publishCommand(fields log.Fields, gatewayID lorawan.EUI64, com
 
 	zmqCommandCounter(command).Inc()
 
-	// in testing, it seems like zmq4-0.13.0 doesn't append a nil byte for
-	// multipart while zmq4-0.7.0 did ... copied the line from zmq4@v0.7.0/rep.go:40
-	payload := zmq4.NewMsgFrom([]byte{0}, []byte(command), bb)
+	payload := zmq4.NewMsgFrom([]byte(command), bb)
 	if err = b.commandSock.SendMulti(payload); err != nil {
 		b.commandSockCancel()
 		b.dialCommandSock()
@@ -233,12 +231,6 @@ func (b *Backend) publishCommand(fields log.Fields, gatewayID lorawan.EUI64, com
 	}
 
 	log.WithFields(fields).Info("gateway/zmq: " + string(reply.Bytes()))
-
-	// frames := []string{command + " " + string(bb)}
-	// err = b.commandSock.Send(zmq4.NewMsgFromString(frames))
-	// if err != nil {
-	// 	return errors.Wrap(err, "gateway/zmq: publish gateway command error")
-	// }
 
 	return nil
 }
@@ -291,7 +283,7 @@ func (b *Backend) statsPacketHandler(payload []byte) {
 	if err != nil {
 		log.WithFields(log.Fields{
 			"data_base64": base64.StdEncoding.EncodeToString(payload),
-		}).WithError(err).Error("gateway/mqtt: unmarshal gateway stats error")
+		}).WithError(err).Error("gateway/zmq: unmarshal gateway stats error")
 		return
 	}
 
@@ -305,7 +297,7 @@ func (b *Backend) statsPacketHandler(payload []byte) {
 			log.WithError(err).WithFields(log.Fields{
 				"key":      key,
 				"stats_id": statsID,
-			}).Error("gateway/mqtt: acquire lock error")
+			}).Error("gateway/zmq: acquire lock error")
 		}
 
 		return
@@ -314,7 +306,7 @@ func (b *Backend) statsPacketHandler(payload []byte) {
 	log.WithFields(log.Fields{
 		"gateway_id": gatewayID,
 		"stats_id":   statsID,
-	}).Info("gateway/mqtt: gateway stats packet received")
+	}).Info("gateway/zmq: gateway stats packet received")
 	b.statsPacketChan <- gatewayStats
 }
 
@@ -327,7 +319,7 @@ func (b *Backend) ackPacketHandler(payload []byte) {
 	if err != nil {
 		log.WithFields(log.Fields{
 			"data_base64": base64.StdEncoding.EncodeToString(payload),
-		}).WithError(err).Error("backend/gateway: unmarshal downlink tx ack error")
+		}).WithError(err).Error("gateway/zmq: unmarshal downlink tx ack error")
 	}
 
 	gatewayID := helpers.GetGatewayID(&ack)
@@ -340,7 +332,7 @@ func (b *Backend) ackPacketHandler(payload []byte) {
 			log.WithError(err).WithFields(log.Fields{
 				"key":         key,
 				"downlink_id": downlinkID,
-			}).Error("gateway/mqtt: acquire lock error")
+			}).Error("gateway/zmq: acquire lock error")
 		}
 
 		return
@@ -349,7 +341,7 @@ func (b *Backend) ackPacketHandler(payload []byte) {
 	log.WithFields(log.Fields{
 		"gateway_id":  gatewayID,
 		"downlink_id": downlinkID,
-	}).Info("backend/gateway: downlink tx acknowledgement received")
+	}).Info("gateway/zmq: downlink tx acknowledgement received")
 	b.downlinkTXAckChan <- ack
 }
 
@@ -357,7 +349,7 @@ func (b *Backend) eventLoop() {
 	for {
 		msg, err := b.eventSock.Recv()
 		if err != nil {
-			log.WithError(err).Error("integration/zmq: receive event message error")
+			log.WithError(err).Error("gateway/zmq: receive event message error")
 
 			// We need to recover both the event and command sockets.
 			func() {
@@ -379,7 +371,7 @@ func (b *Backend) eventLoop() {
 		if len(msg.Frames) != 2 {
 			log.WithFields(log.Fields{
 				"frame_count": len(msg.Frames),
-			}).Error("integration/zmq: expected 2 frames in event message")
+			}).Error("gateway/zmq: expected 2 frames in event message")
 			continue
 		}
 
@@ -396,14 +388,14 @@ func (b *Backend) eventLoop() {
 		default:
 			log.WithFields(log.Fields{
 				"event": string(msg.Frames[0]),
-			}).Error("integration/zmq: unexpected event received")
+			}).Error("gateway/zmq: unexpected event received")
 			continue
 		}
 
 		if err != nil {
 			log.WithError(err).WithFields(log.Fields{
 				"event": string(msg.Frames[0]),
-			}).Error("integration/zmq: handle event error")
+			}).Error("gateway/zmq: handle event error")
 		}
 	}
 }
@@ -427,7 +419,7 @@ func (b *Backend) getGatewayMarshaler(gatewayID lorawan.EUI64) marshaler.Type {
 func (b *Backend) isLocked(key string) (bool, error) {
 	set, err := storage.RedisClient().SetNX(context.Background(), key, "lock", deduplicationLockTTL).Result()
 	if err != nil {
-		return false, errors.Wrap(err, "acquire lock error")
+		return false, errors.Wrap(err, "gateway/zmq: acquire lock error")
 	}
 
 	// Set is true when we were able to set the lock, we return true if it
